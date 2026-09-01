@@ -26,28 +26,30 @@ export const Colors = {
 
 export type ThemeColor = keyof typeof Colors.light & keyof typeof Colors.dark;
 
-export const Fonts = Platform.select({
-  ios: {
-    /** iOS `UIFontDescriptorSystemDesignDefault` */
-    sans: 'system-ui',
-    /** iOS `UIFontDescriptorSystemDesignSerif` */
-    serif: 'ui-serif',
-    /** iOS `UIFontDescriptorSystemDesignRounded` */
-    rounded: 'ui-rounded',
-    /** iOS `UIFontDescriptorSystemDesignMonospaced` */
-    mono: 'ui-monospace',
-  },
-  default: {
-    sans: 'normal',
-    serif: 'serif',
-    rounded: 'normal',
-    mono: 'monospace',
-  },
+export const Fonts = {
+  // Fira Sans family - PostScript names from @expo-google-fonts/fira-sans
+  // All text uses Fira Sans per design requirement
+  regular: 'FiraSans_400Regular',
+  medium: 'FiraSans_500Medium',
+  semiBold: 'FiraSans_600SemiBold',
+  bold: 'FiraSans_700Bold',
+  // Legacy keys mapped to Fira Sans for compatibility
+  sans: 'FiraSans_400Regular',
+  sansMedium: 'FiraSans_500Medium',
+  sansSemiBold: 'FiraSans_600SemiBold',
+  sansBold: 'FiraSans_700Bold',
+  serif: 'FiraSans_400Regular',
+  rounded: 'FiraSans_400Regular',
+  mono: 'FiraSans_400Regular',
+} as const;
+
+// Keep Platform.select wrapper for future web-specific overrides if needed
+export const PlatformFonts = Platform.select({
+  ios: Fonts,
+  default: Fonts,
   web: {
+    ...Fonts,
     sans: 'var(--font-display)',
-    serif: 'var(--font-serif)',
-    rounded: 'var(--font-rounded)',
-    mono: 'var(--font-mono)',
   },
 });
 
