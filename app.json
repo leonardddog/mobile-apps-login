@@ -34,7 +34,8 @@
           "image": "./assets/images/QuestionPro.png",
           "imageWidth": 280
         }
-      ]
+      ],
+      "expo-secure-store"
     ],
     "experiments": {
       "typedRoutes": true,
