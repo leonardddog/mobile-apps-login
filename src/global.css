@@ -1,11 +1,15 @@
 :root {
-  --font-display:
-    'Fira Sans', ui-sans-serif, system-ui, sans-serif, Apple Color Emoji, Segoe UI Emoji,
-    Segoe UI Symbol, Noto Color Emoji;
-  --font-mono:
-    'Fira Sans', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono,
-    Courier New, monospace;
-  --font-rounded: 'Fira Sans', 'SF Pro Rounded', 'Hiragino Maru Gothic ProN', Meiryo,
-    'MS PGothic', sans-serif;
-  --font-serif: 'Fira Sans', Georgia, 'Times New Roman', serif;
+  --font-display: 'Fira Sans';
+  --font-mono: 'Fira Sans';
+  --font-rounded: 'Fira Sans';
+  --font-serif: 'Fira Sans';
+}
+
+html,
+body,
+input,
+textarea,
+button,
+select {
+  font-family: 'Fira Sans';
 }

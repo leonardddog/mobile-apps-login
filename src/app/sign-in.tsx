@@ -14,13 +14,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { LoginBackground, LoginBgSwitcher, useLoginBg } from '@/components/login-background';
 import { Fonts, MaxContentWidth, Spacing } from '@/constants/theme';
 import { useSession } from '@/ctx';
-import { useTheme } from '@/hooks/use-theme';
 
 export default function SignInScreen() {
   const { signIn } = useSession();
-  const theme = useTheme();
+  const bg = useLoginBg();
 
   const emailRef = useRef<TextInput>(null);
   const passwordRef = useRef<TextInput>(null);
@@ -61,6 +61,7 @@ export default function SignInScreen() {
 
   return (
     <ThemedView style={styles.container}>
+      {bg !== 'none' && <LoginBackground variant={bg} />}
       <SafeAreaView style={styles.safeArea}>
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -76,9 +77,14 @@ export default function SignInScreen() {
               <ThemedText type="title" style={[styles.title, { color: '#1B3380' }]}>
                 Welcome to Communities
               </ThemedText>
-              <ThemedText themeColor="textSecondary" style={styles.subtitle}>
-                Sign in to your account to continue
-              </ThemedText>
+              <View style={styles.subtitleRow}>
+                <ThemedText themeColor="textSecondary" style={styles.subtitle}>
+                  New here?{' '}
+                </ThemedText>
+                <Pressable onPress={() => {}}>
+                  <ThemedText style={[styles.subtitle, styles.signupLink]}>Sign up</ThemedText>
+                </Pressable>
+              </View>
             </View>
 
             <View style={styles.form}>
@@ -91,7 +97,7 @@ export default function SignInScreen() {
                   value={email}
                   onChangeText={setEmail}
                   placeholder="you@example.com"
-                  placeholderTextColor={theme.textSecondary}
+                  placeholderTextColor="#9B9B9B"
                   keyboardType="email-address"
                   autoCapitalize="none"
                   autoCorrect={false}
@@ -106,7 +112,7 @@ export default function SignInScreen() {
                     styles.input,
                     {
                       backgroundColor: emailFocused ? '#F5F5F5' : '#FFFFFF',
-                      color: '#000000',
+                      color: '#545E6B',
                       borderColor: emailFocused ? '#1B87E6' : '#9B9B9B',
                       fontFamily: Fonts.regular,
                     },
@@ -132,7 +138,7 @@ export default function SignInScreen() {
                     value={password}
                     onChangeText={setPassword}
                     placeholder="••••••••"
-                    placeholderTextColor={theme.textSecondary}
+                    placeholderTextColor="#9B9B9B"
                     secureTextEntry={!showPassword}
                     autoCapitalize="none"
                     autoCorrect={false}
@@ -144,7 +150,7 @@ export default function SignInScreen() {
                     style={[
                       styles.passwordInput,
                       {
-                        color: '#000000',
+                        color: '#545E6B',
                         fontFamily: Fonts.regular,
                         backgroundColor: passwordFocused ? '#F5F5F5' : '#FFFFFF',
                       },
@@ -154,7 +160,9 @@ export default function SignInScreen() {
                     onPress={() => setShowPassword((v) => !v)}
                     hitSlop={8}
                     style={styles.showPress}>
-                    <ThemedText type="smallBold" themeColor="textSecondary">
+                    <ThemedText
+                      type="small"
+                      style={{ fontFamily: Fonts.regular, color: '#9B9B9B' }}>
                       {showPassword ? 'Hide' : 'Show'}
                     </ThemedText>
                   </Pressable>
@@ -175,6 +183,9 @@ export default function SignInScreen() {
                 </View>
               )}
 
+            </View>
+
+            <View style={styles.loginGroup}>
               <Pressable
                 onPress={onSubmit}
                 disabled={submitting}
@@ -186,29 +197,35 @@ export default function SignInScreen() {
                   <ActivityIndicator color="#fff" />
                 ) : (
                   <ThemedText type="smallBold" style={styles.primaryButtonText}>
-                    Sign in
+                    Log in
                   </ThemedText>
                 )}
               </Pressable>
             </View>
-
-            <View style={styles.footer}>
-              <ThemedText type="small" themeColor="textSecondary">
-                Don&apos;t have an account?{' '}
-              </ThemedText>
-              <Pressable onPress={() => {}}>
-                <ThemedText type="smallBold" style={{ color: '#3c87f7' }}>
-                  Sign up
-                </ThemedText>
-              </Pressable>
-            </View>
           </ScrollView>
         </KeyboardAvoidingView>
+        <View style={styles.poweredBy}>
+          <ThemedText type="small" style={{ fontFamily: Fonts.regular, color: '#9B9B9B' }}>
+            Powered by{' '}
+          </ThemedText>
+          <Pressable onPress={() => {}}>
+            <ThemedText type="small" style={styles.poweredByLink}>
+              QuestionPro
+            </ThemedText>
+          </Pressable>
+        </View>
       </SafeAreaView>
+      <LoginBgSwitcher />
     </ThemedView>
   );
 }
 
+// Spacing reference (at a glance — Spacing: half 2, one 4, two 8, three 16, four 24, five 32):
+// Container (scrollContent): paddingH 24, paddingTop 24, paddingBottom 24, gap 32
+//   → header ↔ form ↔ login button are each separated by 24
+// Form: gap 16 between fields; password → forgot is pulled up to 8 (forgotPress marginTop -8)
+// Inputs: email paddingH 16; password row paddingLeft 16 / paddingRight 8; height 49
+// Button: paddingVertical 14 + marginTop 4; footer "Powered by" paddingVertical 16
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -243,14 +260,20 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     textAlign: 'left',
-    alignSelf: 'stretch',
     fontSize: 16,
     lineHeight: 22,
     fontFamily: Fonts.regular,
   },
+  subtitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'stretch',
+  },
+  signupLink: {
+    color: '#3c87f7',
+  },
   form: {
     gap: Spacing.three,
-    paddingTop: Spacing.two,
   },
   field: {
     gap: Spacing.one,
@@ -300,9 +323,11 @@ const styles = StyleSheet.create({
   },
   forgotPress: {
     alignSelf: 'flex-start',
+    // Form gap is 16; pull up by 8 so password → forgot reads 8
+    marginTop: -Spacing.two,
   },
   forgotText: {
-    fontWeight: '600',
+    fontFamily: Fonts.regular,
   },
   errorBox: {
     borderWidth: 1,
@@ -311,21 +336,28 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.two,
   },
   primaryButton: {
-    borderRadius: 12,
+    borderRadius: 8,
     paddingVertical: 14,
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: Spacing.one,
+  },
+  loginGroup: {
+    alignSelf: 'stretch',
   },
   primaryButtonText: {
     color: '#fff',
     fontSize: 16,
     fontFamily: Fonts.regular,
   },
-  footer: {
+  poweredBy: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    paddingTop: Spacing.three,
+    paddingVertical: Spacing.three,
+  },
+  poweredByLink: {
+    color: '#3c87f7',
+    fontFamily: Fonts.regular,
   },
 });
