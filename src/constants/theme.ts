@@ -13,7 +13,7 @@ export const Colors = {
     background: '#ffffff',
     backgroundElement: '#F0F0F3',
     backgroundSelected: '#E0E1E6',
-    textSecondary: '#60646C',
+    textSecondary: '#545E6B',
   },
   dark: {
     text: '#ffffff',
@@ -44,12 +44,23 @@ export const Fonts = {
 } as const;
 
 // Keep Platform.select wrapper for future web-specific overrides if needed
+// Web uses CSS 'Fira Sans' name (loaded via expo-font @font-face),
+// native uses PostScript names from @expo-google-fonts/fira-sans.
 export const PlatformFonts = Platform.select({
   ios: Fonts,
   default: Fonts,
   web: {
-    ...Fonts,
-    sans: 'var(--font-display)',
+    regular: 'Fira Sans',
+    medium: 'Fira Sans',
+    semiBold: 'Fira Sans',
+    bold: 'Fira Sans',
+    sans: 'Fira Sans',
+    sansMedium: 'Fira Sans',
+    sansSemiBold: 'Fira Sans',
+    sansBold: 'Fira Sans',
+    serif: 'Fira Sans',
+    rounded: 'Fira Sans',
+    mono: 'Fira Sans',
   },
 });
 
