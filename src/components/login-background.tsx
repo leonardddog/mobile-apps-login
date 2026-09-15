@@ -1,5 +1,5 @@
-import { useEffect, useState, useSyncExternalStore } from 'react';
-import { AccessibilityInfo, Pressable, StyleSheet, useColorScheme } from 'react-native';
+import { useEffect, useState } from 'react';
+import { AccessibilityInfo, StyleSheet, useColorScheme } from 'react-native';
 import Animated, {
   Easing,
   cancelAnimation,
@@ -21,53 +21,12 @@ import {
   Svg,
 } from 'react-native-svg';
 
-import { ThemedText } from '@/components/themed-text';
-import { Fonts } from '@/constants/theme';
+// Parked variants ('grid', 'wash') are kept below but never mounted —
+// zero runtime cost (no views, no animations) until one is wired up.
+export type LoginBgVariant = 'dots' | 'grid' | 'wash';
 
-// Dev-only preview switcher (Expo Go can't show custom expo-dev-menu items,
-// so this tiny floating pill cycles the variants; renders null in release).
-export type LoginBgVariant = 'none' | 'dots' | 'grid' | 'wash';
-
-const ORDER: LoginBgVariant[] = ['none', 'dots', 'grid', 'wash'];
-
-let current: LoginBgVariant = 'none';
-const listeners = new Set<() => void>();
-
-function getSnapshot(): LoginBgVariant {
-  return current;
-}
-
-function subscribe(listener: () => void) {
-  listeners.add(listener);
-  return () => {
-    listeners.delete(listener);
-  };
-}
-
-function cycleVariant() {
-  current = ORDER[(ORDER.indexOf(current) + 1) % ORDER.length];
-  listeners.forEach((l) => l());
-}
-
-export function useLoginBg(): LoginBgVariant {
-  return useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
-}
-
-export function LoginBgSwitcher() {
-  const variant = useLoginBg();
-  if (!__DEV__) return null;
-  return (
-    <Pressable
-      onPress={cycleVariant}
-      style={styles.switcher}
-      hitSlop={12}>
-      <ThemedText style={styles.switcherText}>BG: {variant}</ThemedText>
-    </Pressable>
-  );
-}
-
-// Static, code-drawn backgrounds. Light-mode palette only, no animation.
-export function LoginBackground({ variant }: { variant: Exclude<LoginBgVariant, 'none'> }) {
+// Static, code-drawn backgrounds. Light-mode palette only.
+export function LoginBackground({ variant }: { variant: LoginBgVariant }) {
   const scheme = useColorScheme();
   if (scheme === 'dark') return null;
   if (variant === 'dots') return <DotsBackground />;
@@ -118,7 +77,7 @@ function DotsBackground() {
             <Circle cx={5} cy={9} r={1.7} fill="#1B87E6" fillOpacity={0.16} />
             <Circle cx={16} cy={27} r={1.7} fill="#1B87E6" fillOpacity={0.16} />
           </Pattern>
-          <RadialGradient id="bgDotsFade" cx="50%" cy="40%" r="65%">
+          <RadialGradient id="bgDotsFade" cx="50%" cy="40%" r="75%">
             <Stop offset="0%" stopColor="#fff" stopOpacity={0} />
             <Stop offset="45%" stopColor="#fff" stopOpacity={0.55} />
             <Stop offset="75%" stopColor="#fff" stopOpacity={0.9} />
@@ -202,21 +161,5 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
-  },
-  switcher: {
-    position: 'absolute',
-    right: 16,
-    bottom: 64,
-    backgroundColor: '#1B3380',
-    borderRadius: 16,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    opacity: 0.9,
-    zIndex: 10,
-  },
-  switcherText: {
-    color: '#fff',
-    fontSize: 12,
-    fontFamily: Fonts.regular,
   },
 });
