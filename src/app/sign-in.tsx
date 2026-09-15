@@ -14,13 +14,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { LoginBackground, LoginBgSwitcher, useLoginBg } from '@/components/login-background';
+import { LoginBackground } from '@/components/login-background';
 import { Fonts, MaxContentWidth, Spacing } from '@/constants/theme';
 import { useSession } from '@/ctx';
 
 export default function SignInScreen() {
   const { signIn } = useSession();
-  const bg = useLoginBg();
 
   const emailRef = useRef<TextInput>(null);
   const passwordRef = useRef<TextInput>(null);
@@ -32,6 +31,8 @@ export default function SignInScreen() {
   const [submitting, setSubmitting] = useState(false);
   const [emailFocused, setEmailFocused] = useState(false);
   const [passwordFocused, setPasswordFocused] = useState(false);
+
+  const canSubmit = email.trim().length > 0 && password.length > 0;
 
   const onSubmit = async () => {
     setError(null);
@@ -61,11 +62,10 @@ export default function SignInScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      {bg !== 'none' && <LoginBackground variant={bg} />}
+      <LoginBackground variant="dots" />
       <SafeAreaView style={styles.safeArea}>
         <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+          behavior={Platform.OS === 'ios' ? undefined : 'height'}
           style={styles.keyboardView}>
           <ScrollView
             contentContainerStyle={styles.scrollContent}
@@ -188,15 +188,20 @@ export default function SignInScreen() {
             <View style={styles.loginGroup}>
               <Pressable
                 onPress={onSubmit}
-                disabled={submitting}
+                disabled={!canSubmit || submitting}
                 style={({ pressed }) => [
                   styles.primaryButton,
-                  { backgroundColor: '#0A84FF', opacity: submitting ? 0.7 : pressed ? 0.9 : 1 },
+                  {
+                    backgroundColor: canSubmit ? '#1B87E6' : '#F0F0F0',
+                    opacity: submitting ? 0.7 : pressed ? 0.9 : 1,
+                  },
                 ]}>
                 {submitting ? (
                   <ActivityIndicator color="#fff" />
                 ) : (
-                  <ThemedText type="smallBold" style={styles.primaryButtonText}>
+                  <ThemedText
+                    type="smallBold"
+                    style={[styles.primaryButtonText, { color: canSubmit ? '#fff' : '#9B9B9B' }]}>
                     Log in
                   </ThemedText>
                 )}
@@ -215,14 +220,13 @@ export default function SignInScreen() {
           </Pressable>
         </View>
       </SafeAreaView>
-      <LoginBgSwitcher />
     </ThemedView>
   );
 }
 
 // Spacing reference (at a glance — Spacing: half 2, one 4, two 8, three 16, four 24, five 32):
 // Container (scrollContent): paddingH 24, paddingTop 24, paddingBottom 24, gap 32
-//   → header ↔ form ↔ login button are each separated by 24
+//   → header ↔ form ↔ login button are each separated by 32
 // Form: gap 16 between fields; password → forgot is pulled up to 8 (forgotPress marginTop -8)
 // Inputs: email paddingH 16; password row paddingLeft 16 / paddingRight 8; height 49
 // Button: paddingVertical 14 + marginTop 4; footer "Powered by" paddingVertical 16
