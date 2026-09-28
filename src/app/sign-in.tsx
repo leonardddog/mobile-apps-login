@@ -23,6 +23,8 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { LoginBackground } from '@/components/login-background';
+import { LoginIllustration } from '@/components/login-illustration';
+import { AppleIcon, GoogleIcon, LinkedInIcon } from '@/components/sso-icons';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Fonts, MaxContentWidth, Spacing } from '@/constants/theme';
@@ -57,6 +59,13 @@ export default function SignInScreen() {
   const [forgotClosing, setForgotClosing] = useState(false);
   const forgotTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const [step, setStep] = useState<'selection' | 'email'>('selection');
+  const [ssoProvider, setSsoProvider] = useState<'google' | 'apple' | 'linkedin' | null>(null);
+  // Same dismiss-animation guard as forgot: keeps the scrim mounted while
+  // the native SSO sheet plays its dismiss animation.
+  const [ssoClosing, setSsoClosing] = useState(false);
+  const ssoTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const canSubmit = email.trim().length > 0 && password.length > 0;
   const canSendReset = forgotEmail.trim().length > 0;
 
@@ -87,6 +96,29 @@ export default function SignInScreen() {
       forgotTimer.current = null;
     }, 400);
   };
+
+  const openSso = (provider: 'google' | 'apple' | 'linkedin') => {
+    if (ssoTimer.current) {
+      clearTimeout(ssoTimer.current);
+      ssoTimer.current = null;
+    }
+    setSsoClosing(false);
+    setSsoProvider(provider);
+  };
+
+  const onSsoDismiss = () => {
+    setSsoProvider(null);
+    setSsoClosing(true);
+    if (ssoTimer.current) {
+      clearTimeout(ssoTimer.current);
+    }
+    ssoTimer.current = setTimeout(() => {
+      setSsoClosing(false);
+      ssoTimer.current = null;
+    }, 400);
+  };
+
+  const ssoLabel = ssoProvider === 'apple' ? 'Apple' : ssoProvider === 'linkedin' ? 'LinkedIn' : 'Google';
 
   const onSubmitForgot = async () => {
     setForgotError(null);
@@ -146,6 +178,61 @@ export default function SignInScreen() {
     <ThemedView style={styles.container}>
       <LoginBackground variant="dots" />
       <SafeAreaView style={styles.safeArea}>
+        {step === 'selection' ? (
+          <View style={styles.selectionContent}>
+            <View style={styles.header}>
+              <ThemedText type="title" style={[styles.title, { color: '#1B3380' }]}>
+                Welcome to Communities
+              </ThemedText>
+              <ThemedText themeColor="textSecondary" style={styles.selectionSubtitle}>
+                Sign in or{' '}
+                <ThemedText style={[styles.selectionSubtitle, { color: '#1B87E6' }]}>
+                  create an account
+                </ThemedText>
+              </ThemedText>
+            </View>
+
+            <View style={styles.selectionButtons}>
+              <View style={styles.illustrationWrap}>
+                <LoginIllustration width={200} />
+              </View>
+              <Pressable
+                onPress={() => setStep('email')}
+                style={({ pressed }) => [styles.primaryButton, { backgroundColor: '#1B87E6', opacity: pressed ? 0.9 : 1 }]}>
+                <ThemedText type="smallBold" style={styles.primaryButtonText}>
+                  Continue with email
+                </ThemedText>
+              </Pressable>
+              <View style={styles.orRow}>
+                <View style={styles.orLine} />
+                <ThemedText type="small" style={styles.orText}>
+                  OR
+                </ThemedText>
+                <View style={styles.orLine} />
+              </View>
+              <View style={styles.ssoRow}>
+                <Pressable
+                  onPress={() => openSso('google')}
+                  accessibilityLabel="Continue with Google"
+                  style={({ pressed }) => [styles.ssoButton, { opacity: pressed ? 0.7 : 1 }]}>
+                  <GoogleIcon size={22} />
+                </Pressable>
+                <Pressable
+                  onPress={() => openSso('apple')}
+                  accessibilityLabel="Continue with Apple"
+                  style={({ pressed }) => [styles.ssoButton, { opacity: pressed ? 0.7 : 1 }]}>
+                  <AppleIcon size={24} />
+                </Pressable>
+                <Pressable
+                  onPress={() => openSso('linkedin')}
+                  accessibilityLabel="Continue with LinkedIn"
+                  style={({ pressed }) => [styles.ssoButton, { opacity: pressed ? 0.7 : 1 }]}>
+                  <LinkedInIcon size={22} />
+                </Pressable>
+              </View>
+            </View>
+          </View>
+        ) : (
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? undefined : 'height'}
           style={styles.keyboardView}>
@@ -159,14 +246,9 @@ export default function SignInScreen() {
               <ThemedText type="title" style={[styles.title, { color: '#1B3380' }]}>
                 Welcome to Communities
               </ThemedText>
-              <View style={styles.subtitleRow}>
-                <ThemedText themeColor="textSecondary" style={styles.subtitle}>
-                  New here?{' '}
-                </ThemedText>
-                <Pressable onPress={() => { }}>
-                  <ThemedText style={[styles.subtitle, styles.signupLink]}>Sign up</ThemedText>
-                </Pressable>
-              </View>
+              <ThemedText themeColor="textSecondary" style={styles.subtitle}>
+                Enter your credentials
+              </ThemedText>
             </View>
 
             <View style={styles.form}>
@@ -291,6 +373,7 @@ export default function SignInScreen() {
             </View>
           </ScrollView>
         </KeyboardAvoidingView>
+        )}
         <View style={styles.poweredBy}>
           <ThemedText type="small" style={{ fontFamily: Fonts.regular, color: '#9B9B9B' }}>
             Powered by{' '}
@@ -303,7 +386,7 @@ export default function SignInScreen() {
         </View>
       </SafeAreaView>
 
-      {(forgotOpen || forgotClosing) && (
+      {(forgotOpen || forgotClosing || ssoProvider !== null || ssoClosing) && (
         <View style={styles.screenBlur} pointerEvents="none">
           <View style={[styles.screenScrim, StyleSheet.absoluteFill]} />
           <BlurView intensity={5} tint="light" style={StyleSheet.absoluteFill} />
@@ -462,11 +545,45 @@ export default function SignInScreen() {
           </ScrollView>
         </RNHostView>
       </BottomSheet>
+
+      <BottomSheet
+        isPresented={ssoProvider !== null}
+        onDismiss={onSsoDismiss}
+        contentPadding={{
+          top: Spacing.five,
+          bottom: Spacing.four,
+          left: Spacing.four,
+          right: Spacing.four,
+        }}
+        modifiers={[background('#FFFFFF')]}>
+        <RNHostView modifiers={[ignoreSafeArea({ regions: 'keyboard' })]}>
+          <View style={styles.sheetContent}>
+            <View style={styles.sheetHeader}>
+              <ThemedText type="smallBold" style={styles.sheetTitle}>
+                Continue with {ssoLabel}
+              </ThemedText>
+              <ThemedText type="small" style={styles.sheetBody}>
+                SSO login is coming soon.
+              </ThemedText>
+            </View>
+            <Pressable
+              onPress={onSsoDismiss}
+              style={({ pressed }) => [styles.secondaryButton, { opacity: pressed ? 0.7 : 1 }]}>
+              <ThemedText type="smallBold" style={styles.secondaryButtonText}>
+                Close
+              </ThemedText>
+            </Pressable>
+          </View>
+        </RNHostView>
+      </BottomSheet>
     </ThemedView>
   );
 }
 
 // Spacing reference (at a glance — Spacing: half 2, one 4, two 8, three 16, four 24, five 32):
+// Selection step (selectionContent): paddingH 24, paddingTop 24, paddingBottom 24, space-between
+//   → header pinned top, illustration + buttons pinned bottom (mirrors login-sheets)
+//   → selection buttons gap 16; OR row gap 8; SSO row centered, gap 16, buttons 48x48
 // Container (scrollContent): paddingH 24, paddingTop 24, paddingBottom 24, gap 32
 //   → header ↔ form ↔ login button are each separated by 32
 // Form: gap 16 between fields; password → forgot is pulled up to 8 (forgotPress marginTop -8)
@@ -518,14 +635,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     lineHeight: 22,
     fontFamily: Fonts.regular,
-  },
-  subtitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'stretch',
-  },
-  signupLink: {
-    color: '#3c87f7',
   },
   form: {
     gap: Spacing.three,
@@ -599,6 +708,76 @@ const styles = StyleSheet.create({
   },
   loginGroup: {
     alignSelf: 'stretch',
+  },
+  selectionContent: {
+    flex: 1,
+    width: '100%',
+    maxWidth: MaxContentWidth,
+    paddingHorizontal: Spacing.four,
+    paddingTop: Spacing.four,
+    paddingBottom: Spacing.four,
+    justifyContent: 'space-between',
+  },
+  selectionSubtitle: {
+    textAlign: 'left',
+    alignSelf: 'stretch',
+    fontSize: 16,
+    lineHeight: 22,
+    fontFamily: Fonts.regular,
+  },
+  selectionButtons: {
+    alignSelf: 'stretch',
+    gap: Spacing.three,
+  },
+  illustrationWrap: {
+    alignSelf: 'stretch',
+    alignItems: 'flex-end',
+  },
+  orRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
+  },
+  orLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#E5E7EB',
+  },
+  orText: {
+    fontSize: 12,
+    lineHeight: 16,
+    fontFamily: Fonts.regular,
+    color: '#9B9B9B',
+  },
+  ssoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.three,
+  },
+  ssoButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 8,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: 'rgba(27, 51, 128, 0.08)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  secondaryButton: {
+    borderRadius: 8,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#1B87E6',
+    paddingVertical: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  secondaryButtonText: {
+    color: '#1B87E6',
+    fontSize: 16,
+    fontFamily: Fonts.regular,
   },
   primaryButtonText: {
     color: '#fff',
