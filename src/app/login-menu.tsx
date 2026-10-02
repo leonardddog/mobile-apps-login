@@ -22,6 +22,12 @@ const APPROACHES = [
     description: 'Log in and sign up open as bottom sheets',
     href: '/login-sheets' as const,
   },
+  {
+    name: 'Unified',
+    tag: 'New',
+    description: 'Figma-driven access-code entry on the dots background',
+    href: '/login-unified' as const,
+  },
 ];
 
 export default function LoginMenuScreen() {

@@ -5,11 +5,11 @@ import {
   FiraSans_700Bold,
   useFonts,
 } from '@expo-google-fonts/fira-sans';
-import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router';
-import { Stack } from 'expo-router';
+import { DefaultTheme, Stack, ThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
-import { useColorScheme } from 'react-native';
+import { StatusBar } from 'react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
 import { SessionProvider, useSession } from '@/ctx';
@@ -17,7 +17,6 @@ import { SessionProvider, useSession } from '@/ctx';
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
   const [fontsLoaded, fontError] = useFonts({
     FiraSans_400Regular,
     FiraSans_500Medium,
@@ -26,13 +25,16 @@ export default function RootLayout() {
   });
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <SessionProvider>
-        <RootSplashController fontsLoaded={fontsLoaded} fontError={fontError} />
-        <AnimatedSplashOverlay />
-        <RootNavigator />
-      </SessionProvider>
-    </ThemeProvider>
+    <SafeAreaProvider>
+      <ThemeProvider value={DefaultTheme}>
+        <SessionProvider>
+          <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" translucent={false} />
+          <RootSplashController fontsLoaded={fontsLoaded} fontError={fontError} />
+          <AnimatedSplashOverlay />
+          <RootNavigator />
+        </SessionProvider>
+      </ThemeProvider>
+    </SafeAreaProvider>
   );
 }
 
@@ -67,6 +69,7 @@ function RootNavigator() {
         <Stack.Screen name="login-menu" />
         <Stack.Screen name="sign-in" options={{ gestureEnabled: true }} />
         <Stack.Screen name="login-sheets" options={{ gestureEnabled: true }} />
+        <Stack.Screen name="login-unified" options={{ gestureEnabled: true }} />
       </Stack.Protected>
     </Stack>
   );

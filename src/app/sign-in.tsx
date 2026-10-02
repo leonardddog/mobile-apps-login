@@ -13,7 +13,6 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, {
   FadeIn,
   FadeInDown,
@@ -21,6 +20,7 @@ import Animated, {
   SlideInRight,
   ZoomIn,
 } from 'react-native-reanimated';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { LoginBackground } from '@/components/login-background';
 import { LoginIllustration } from '@/components/login-illustration';
@@ -35,6 +35,13 @@ export default function SignInScreen() {
 
   const emailRef = useRef<TextInput>(null);
   const passwordRef = useRef<TextInput>(null);
+  const accessCodeRef = useRef<TextInput>(null);
+  const selectionEmailRef = useRef<TextInput>(null);
+
+  const [accessCode, setAccessCode] = useState('');
+  const [accessFocused, setAccessFocused] = useState(false);
+  const [accessError, setAccessError] = useState<string | null>(null);
+  const [accessSubmitting, setAccessSubmitting] = useState(false);
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -59,7 +66,10 @@ export default function SignInScreen() {
   const [forgotClosing, setForgotClosing] = useState(false);
   const forgotTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const [step, setStep] = useState<'selection' | 'email'>('selection');
+  const [step, setStep] = useState<'access-code' | 'selection' | 'email'>('access-code');
+  const [selectionEmail, setSelectionEmail] = useState('');
+  const [selectionFocused, setSelectionFocused] = useState(false);
+  const [selectionError, setSelectionError] = useState<string | null>(null);
   const [ssoProvider, setSsoProvider] = useState<'google' | 'apple' | 'linkedin' | null>(null);
   // Same dismiss-animation guard as forgot: keeps the scrim mounted while
   // the native SSO sheet plays its dismiss animation.
@@ -68,6 +78,42 @@ export default function SignInScreen() {
 
   const canSubmit = email.trim().length > 0 && password.length > 0;
   const canSendReset = forgotEmail.trim().length > 0;
+  const canSubmitAccess = accessCode.trim().length > 0;
+  const canContinueSelection = selectionEmail.trim().length > 0;
+
+  const onContinueSelection = () => {
+    setSelectionError(null);
+    const normalizedEmail = selectionEmail.trim().toLowerCase();
+
+    if (!normalizedEmail) {
+      setSelectionError('Email is required.');
+      return;
+    }
+    if (!/\S+@\S+\.\S+/.test(normalizedEmail)) {
+      setSelectionError('Please enter a valid email address.');
+      return;
+    }
+
+    // Validate-only for now; prefill the credentials step for later.
+    setEmail(normalizedEmail);
+  };
+
+  const onSubmitAccess = async () => {
+    setAccessError(null);
+    const code = accessCode.trim();
+
+    if (!code) {
+      setAccessError('Access code is required.');
+      return;
+    }
+
+    setAccessSubmitting(true);
+    // Simulate async validation; replace with real API call:
+    // const { error } = await validateAccessCode(code)
+    await new Promise((r) => setTimeout(r, 300));
+    setAccessSubmitting(false);
+    setStep('selection');
+  };
 
   const openForgot = () => {
     if (forgotTimer.current) {
@@ -178,201 +224,349 @@ export default function SignInScreen() {
     <ThemedView style={styles.container}>
       <LoginBackground variant="dots" />
       <SafeAreaView style={styles.safeArea}>
-        {step === 'selection' ? (
-          <View style={styles.selectionContent}>
-            <View style={styles.header}>
-              <ThemedText type="title" style={[styles.title, { color: '#1B3380' }]}>
-                Welcome to Communities
-              </ThemedText>
-              <ThemedText themeColor="textSecondary" style={styles.selectionSubtitle}>
-                Sign in or{' '}
-                <ThemedText style={[styles.selectionSubtitle, { color: '#1B87E6' }]}>
-                  create an account
+        {step === 'access-code' ? (
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? undefined : 'height'}
+            style={styles.keyboardView}>
+            <ScrollView
+              contentContainerStyle={styles.scrollContent}
+              keyboardShouldPersistTaps="handled"
+              keyboardDismissMode="interactive"
+              automaticallyAdjustKeyboardInsets
+              showsVerticalScrollIndicator={false}>
+              <View style={styles.header}>
+                <ThemedText style={[styles.accessTitle, { color: '#1B3380' }]}>
+                  Communities
                 </ThemedText>
-              </ThemedText>
-            </View>
+                <ThemedText style={styles.accessSubtitle}>
+                  Enter your access code to join
+                </ThemedText>
+              </View>
 
-            <View style={styles.selectionButtons}>
-              <View style={styles.illustrationWrap}>
-                <LoginIllustration width={200} />
+              <View style={styles.accessForm}>
+                <Pressable onPress={() => accessCodeRef.current?.focus()} style={styles.field}>
+                  <ThemedText type="smallBold" style={styles.label}>
+                    Access code
+                  </ThemedText>
+                  <TextInput
+                    ref={accessCodeRef}
+                    value={accessCode}
+                    onChangeText={(v) => {
+                      setAccessCode(v);
+                      if (accessError) setAccessError(null);
+                    }}
+                    placeholder="Enter access code"
+                    placeholderTextColor="#9B9B9B"
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    returnKeyType="done"
+                    onSubmitEditing={onSubmitAccess}
+                    onFocus={() => setAccessFocused(true)}
+                    onBlur={() => setAccessFocused(false)}
+                    style={[
+                      styles.accessInput,
+                      {
+                        backgroundColor: accessFocused ? '#F5F5F5' : '#FFFFFF',
+                        color: '#545E6B',
+                        borderColor: accessFocused ? '#1B87E6' : '#9B9B9B',
+                        fontFamily: Fonts.regular,
+                      },
+                    ]}
+                  />
+                </Pressable>
+
+                {accessError && (
+                  <View style={[styles.errorBox, { backgroundColor: '#FEF2F2', borderColor: '#FECACA' }]}>
+                    <ThemedText type="small" style={{ color: '#DC2626' }}>
+                      {accessError}
+                    </ThemedText>
+                  </View>
+                )}
               </View>
-              <Pressable
-                onPress={() => setStep('email')}
-                style={({ pressed }) => [styles.primaryButton, { backgroundColor: '#1B87E6', opacity: pressed ? 0.9 : 1 }]}>
-                <ThemedText type="smallBold" style={styles.primaryButtonText}>
-                  Continue with email
-                </ThemedText>
-              </Pressable>
-              <View style={styles.orRow}>
-                <View style={styles.orLine} />
-                <ThemedText type="small" style={styles.orText}>
-                  OR
-                </ThemedText>
-                <View style={styles.orLine} />
+
+              <View style={styles.loginGroup}>
+                <Pressable
+                  onPress={onSubmitAccess}
+                  disabled={!canSubmitAccess || accessSubmitting}
+                  accessibilityLabel="Enter"
+                  style={({ pressed }) => [
+                    styles.primaryButton,
+                    {
+                      backgroundColor: canSubmitAccess ? '#1B87E6' : '#F0F0F0',
+                      opacity: accessSubmitting ? 0.7 : pressed ? 0.9 : 1,
+                    },
+                  ]}>
+                  {accessSubmitting ? (
+                    <ActivityIndicator color="#fff" />
+                  ) : (
+                    <ThemedText
+                      type="smallBold"
+                      style={[styles.primaryButtonText, { color: canSubmitAccess ? '#fff' : '#9B9B9B' }]}>
+                      Enter
+                    </ThemedText>
+                  )}
+                </Pressable>
               </View>
-              <View style={styles.ssoRow}>
+
+              <View style={styles.accessIllustrationWrap}>
+                <LoginIllustration width={160} />
+              </View>
+            </ScrollView>
+          </KeyboardAvoidingView>
+        ) : step === 'selection' ? (
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? undefined : 'height'}
+            style={styles.keyboardView}>
+            <ScrollView
+              contentContainerStyle={styles.scrollContent}
+              keyboardShouldPersistTaps="handled"
+              keyboardDismissMode="interactive"
+              automaticallyAdjustKeyboardInsets
+              showsVerticalScrollIndicator={false}>
+              <View style={styles.header}>
+                <ThemedText style={[styles.petverseTitle, { color: '#1B3380' }]}>
+                  Welcome to Petverse
+                </ThemedText>
+                <ThemedText style={styles.petverseSubtitle}>
+                  Sign in or create an account
+                </ThemedText>
+              </View>
+
+              <View style={styles.petverseForm}>
+                <Pressable onPress={() => selectionEmailRef.current?.focus()} style={styles.field}>
+                  <ThemedText type="smallBold" style={styles.label}>
+                    Email
+                  </ThemedText>
+                  <TextInput
+                    ref={selectionEmailRef}
+                    value={selectionEmail}
+                    onChangeText={(v) => {
+                      setSelectionEmail(v);
+                      if (selectionError) setSelectionError(null);
+                    }}
+                    placeholder="Enter email address"
+                    placeholderTextColor="#9B9B9B"
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    autoComplete="email"
+                    textContentType="emailAddress"
+                    returnKeyType="done"
+                    onSubmitEditing={onContinueSelection}
+                    onFocus={() => setSelectionFocused(true)}
+                    onBlur={() => setSelectionFocused(false)}
+                    style={[
+                      styles.accessInput,
+                      {
+                        backgroundColor: selectionFocused ? '#F5F5F5' : '#FFFFFF',
+                        color: '#545E6B',
+                        borderColor: selectionFocused ? '#1B87E6' : '#9B9B9B',
+                        fontFamily: Fonts.regular,
+                      },
+                    ]}
+                  />
+                </Pressable>
+
+                {selectionError && (
+                  <View style={[styles.errorBox, { backgroundColor: '#FEF2F2', borderColor: '#FECACA' }]}>
+                    <ThemedText type="small" style={{ color: '#DC2626' }}>
+                      {selectionError}
+                    </ThemedText>
+                  </View>
+                )}
+              </View>
+
+              <View style={styles.petverseActions}>
+                <Pressable
+                  onPress={onContinueSelection}
+                  disabled={!canContinueSelection}
+                  accessibilityLabel="Continue"
+                  style={({ pressed }) => [
+                    styles.primaryButton,
+                    {
+                      backgroundColor: canContinueSelection ? '#1B87E6' : '#F0F0F0',
+                      opacity: pressed ? 0.9 : 1,
+                      marginTop: 0,
+                    },
+                  ]}>
+                  <ThemedText
+                    type="smallBold"
+                    style={[styles.primaryButtonText, { color: canContinueSelection ? '#fff' : '#9B9B9B' }]}>
+                    Continue
+                  </ThemedText>
+                </Pressable>
+                <View style={styles.orRow}>
+                  <View style={styles.orLine} />
+                  <ThemedText style={styles.orLowerText}>
+                    or
+                  </ThemedText>
+                  <View style={styles.orLine} />
+                </View>
+              </View>
+
+              <View style={styles.socialRow}>
                 <Pressable
                   onPress={() => openSso('google')}
                   accessibilityLabel="Continue with Google"
-                  style={({ pressed }) => [styles.ssoButton, { opacity: pressed ? 0.7 : 1 }]}>
-                  <GoogleIcon size={22} />
+                  style={({ pressed }) => [styles.socialButton, { opacity: pressed ? 0.7 : 1 }]}>
+                  <GoogleIcon size={18} />
                 </Pressable>
                 <Pressable
                   onPress={() => openSso('apple')}
                   accessibilityLabel="Continue with Apple"
-                  style={({ pressed }) => [styles.ssoButton, { opacity: pressed ? 0.7 : 1 }]}>
-                  <AppleIcon size={24} />
+                  style={({ pressed }) => [styles.socialButton, { opacity: pressed ? 0.7 : 1 }]}>
+                  <AppleIcon size={18} />
                 </Pressable>
                 <Pressable
                   onPress={() => openSso('linkedin')}
                   accessibilityLabel="Continue with LinkedIn"
-                  style={({ pressed }) => [styles.ssoButton, { opacity: pressed ? 0.7 : 1 }]}>
-                  <LinkedInIcon size={22} />
+                  style={({ pressed }) => [styles.socialButton, { opacity: pressed ? 0.7 : 1 }]}>
+                  <LinkedInIcon size={18} />
                 </Pressable>
               </View>
-            </View>
-          </View>
+            </ScrollView>
+          </KeyboardAvoidingView>
         ) : (
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? undefined : 'height'}
-          style={styles.keyboardView}>
-          <ScrollView
-            contentContainerStyle={styles.scrollContent}
-            keyboardShouldPersistTaps="handled"
-            keyboardDismissMode="interactive"
-            automaticallyAdjustKeyboardInsets
-            showsVerticalScrollIndicator={false}>
-            <View style={styles.header}>
-              <ThemedText type="title" style={[styles.title, { color: '#1B3380' }]}>
-                Welcome to Communities
-              </ThemedText>
-              <ThemedText themeColor="textSecondary" style={styles.subtitle}>
-                Enter your credentials
-              </ThemedText>
-            </View>
-
-            <View style={styles.form}>
-              <Pressable onPress={() => emailRef.current?.focus()} style={styles.field}>
-                <ThemedText type="smallBold" style={styles.label}>
-                  Email
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? undefined : 'height'}
+            style={styles.keyboardView}>
+            <ScrollView
+              contentContainerStyle={styles.scrollContent}
+              keyboardShouldPersistTaps="handled"
+              keyboardDismissMode="interactive"
+              automaticallyAdjustKeyboardInsets
+              showsVerticalScrollIndicator={false}>
+              <View style={styles.header}>
+                <ThemedText type="title" style={[styles.title, { color: '#1B3380' }]}>
+                  Welcome to Communities
                 </ThemedText>
-                <TextInput
-                  ref={emailRef}
-                  value={email}
-                  onChangeText={setEmail}
-                  placeholder="you@example.com"
-                  placeholderTextColor="#9B9B9B"
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  autoComplete="email"
-                  textContentType="emailAddress"
-                  returnKeyType="next"
-                  onSubmitEditing={() => passwordRef.current?.focus()}
-                  blurOnSubmit={false}
-                  onFocus={() => setEmailFocused(true)}
-                  onBlur={() => setEmailFocused(false)}
-                  style={[
-                    styles.input,
-                    {
-                      backgroundColor: emailFocused ? '#F5F5F5' : '#FFFFFF',
-                      color: '#545E6B',
-                      borderColor: emailFocused ? '#1B87E6' : '#9B9B9B',
-                      fontFamily: Fonts.regular,
-                    },
-                  ]}
-                />
-              </Pressable>
-
-              <View style={styles.field}>
-                <ThemedText type="smallBold" style={styles.label}>
-                  Password
+                <ThemedText themeColor="textSecondary" style={styles.subtitle}>
+                  Enter your credentials
                 </ThemedText>
-                <Pressable
-                  onPress={() => passwordRef.current?.focus()}
-                  style={[
-                    styles.passwordRow,
-                    {
-                      backgroundColor: passwordFocused ? '#F5F5F5' : '#FFFFFF',
-                      borderColor: passwordFocused ? '#1B87E6' : '#9B9B9B',
-                    },
-                  ]}>
+              </View>
+
+              <View style={styles.form}>
+                <Pressable onPress={() => emailRef.current?.focus()} style={styles.field}>
+                  <ThemedText type="smallBold" style={styles.label}>
+                    Email
+                  </ThemedText>
                   <TextInput
-                    ref={passwordRef}
-                    value={password}
-                    onChangeText={setPassword}
-                    placeholder="••••••••"
+                    ref={emailRef}
+                    value={email}
+                    onChangeText={setEmail}
+                    placeholder="you@example.com"
                     placeholderTextColor="#9B9B9B"
-                    secureTextEntry={!showPassword}
+                    keyboardType="email-address"
                     autoCapitalize="none"
                     autoCorrect={false}
-                    textContentType="password"
-                    returnKeyType="done"
-                    onSubmitEditing={onSubmit}
-                    onFocus={() => setPasswordFocused(true)}
-                    onBlur={() => setPasswordFocused(false)}
+                    autoComplete="email"
+                    textContentType="emailAddress"
+                    returnKeyType="next"
+                    onSubmitEditing={() => passwordRef.current?.focus()}
+                    blurOnSubmit={false}
+                    onFocus={() => setEmailFocused(true)}
+                    onBlur={() => setEmailFocused(false)}
                     style={[
-                      styles.passwordInput,
+                      styles.input,
                       {
+                        backgroundColor: emailFocused ? '#F5F5F5' : '#FFFFFF',
                         color: '#545E6B',
+                        borderColor: emailFocused ? '#1B87E6' : '#9B9B9B',
                         fontFamily: Fonts.regular,
-                        backgroundColor: passwordFocused ? '#F5F5F5' : '#FFFFFF',
                       },
                     ]}
                   />
-                  <Pressable
-                    onPress={() => setShowPassword((v) => !v)}
-                    hitSlop={8}
-                    style={styles.showPress}>
-                    <ThemedText
-                      type="small"
-                      style={{ fontFamily: Fonts.regular, color: '#9B9B9B' }}>
-                      {showPassword ? 'Hide' : 'Show'}
-                    </ThemedText>
-                  </Pressable>
                 </Pressable>
+
+                <View style={styles.field}>
+                  <ThemedText type="smallBold" style={styles.label}>
+                    Password
+                  </ThemedText>
+                  <Pressable
+                    onPress={() => passwordRef.current?.focus()}
+                    style={[
+                      styles.passwordRow,
+                      {
+                        backgroundColor: passwordFocused ? '#F5F5F5' : '#FFFFFF',
+                        borderColor: passwordFocused ? '#1B87E6' : '#9B9B9B',
+                      },
+                    ]}>
+                    <TextInput
+                      ref={passwordRef}
+                      value={password}
+                      onChangeText={setPassword}
+                      placeholder="••••••••"
+                      placeholderTextColor="#9B9B9B"
+                      secureTextEntry={!showPassword}
+                      autoCapitalize="none"
+                      autoCorrect={false}
+                      textContentType="password"
+                      returnKeyType="done"
+                      onSubmitEditing={onSubmit}
+                      onFocus={() => setPasswordFocused(true)}
+                      onBlur={() => setPasswordFocused(false)}
+                      style={[
+                        styles.passwordInput,
+                        {
+                          color: '#545E6B',
+                          fontFamily: Fonts.regular,
+                          backgroundColor: passwordFocused ? '#F5F5F5' : '#FFFFFF',
+                        },
+                      ]}
+                    />
+                    <Pressable
+                      onPress={() => setShowPassword((v) => !v)}
+                      hitSlop={8}
+                      style={styles.showPress}>
+                      <ThemedText
+                        type="small"
+                        style={{ fontFamily: Fonts.regular, color: '#9B9B9B' }}>
+                        {showPassword ? 'Hide' : 'Show'}
+                      </ThemedText>
+                    </Pressable>
+                  </Pressable>
+                </View>
+
+                <Pressable onPress={openForgot} style={styles.forgotPress}>
+                  <ThemedText type="small" style={[styles.forgotText, { color: '#3c87f7' }]}>
+                    Forgot password?
+                  </ThemedText>
+                </Pressable>
+
+                {error && (
+                  <View style={[styles.errorBox, { backgroundColor: '#FEF2F2', borderColor: '#FECACA' }]}>
+                    <ThemedText type="small" style={{ color: '#DC2626' }}>
+                      {error}
+                    </ThemedText>
+                  </View>
+                )}
+
               </View>
 
-              <Pressable onPress={openForgot} style={styles.forgotPress}>
-                <ThemedText type="small" style={[styles.forgotText, { color: '#3c87f7' }]}>
-                  Forgot password?
-                </ThemedText>
-              </Pressable>
-
-              {error && (
-                <View style={[styles.errorBox, { backgroundColor: '#FEF2F2', borderColor: '#FECACA' }]}>
-                  <ThemedText type="small" style={{ color: '#DC2626' }}>
-                    {error}
-                  </ThemedText>
-                </View>
-              )}
-
-            </View>
-
-            <View style={styles.loginGroup}>
-              <Pressable
-                onPress={onSubmit}
-                disabled={!canSubmit || submitting}
-                style={({ pressed }) => [
-                  styles.primaryButton,
-                  {
-                    backgroundColor: canSubmit ? '#1B87E6' : '#F0F0F0',
-                    opacity: submitting ? 0.7 : pressed ? 0.9 : 1,
-                  },
-                ]}>
-                {submitting ? (
-                  <ActivityIndicator color="#fff" />
-                ) : (
-                  <ThemedText
-                    type="smallBold"
-                    style={[styles.primaryButtonText, { color: canSubmit ? '#fff' : '#9B9B9B' }]}>
-                    Log in
-                  </ThemedText>
-                )}
-              </Pressable>
-            </View>
-          </ScrollView>
-        </KeyboardAvoidingView>
+              <View style={styles.loginGroup}>
+                <Pressable
+                  onPress={onSubmit}
+                  disabled={!canSubmit || submitting}
+                  style={({ pressed }) => [
+                    styles.primaryButton,
+                    {
+                      backgroundColor: canSubmit ? '#1B87E6' : '#F0F0F0',
+                      opacity: submitting ? 0.7 : pressed ? 0.9 : 1,
+                    },
+                  ]}>
+                  {submitting ? (
+                    <ActivityIndicator color="#fff" />
+                  ) : (
+                    <ThemedText
+                      type="smallBold"
+                      style={[styles.primaryButtonText, { color: canSubmit ? '#fff' : '#9B9B9B' }]}>
+                      Log in
+                    </ThemedText>
+                  )}
+                </Pressable>
+              </View>
+            </ScrollView>
+          </KeyboardAvoidingView>
         )}
         <View style={styles.poweredBy}>
           <ThemedText type="small" style={{ fontFamily: Fonts.regular, color: '#9B9B9B' }}>
@@ -581,9 +775,15 @@ export default function SignInScreen() {
 }
 
 // Spacing reference (at a glance — Spacing: half 2, one 4, two 8, three 16, four 24, five 32):
-// Selection step (selectionContent): paddingH 24, paddingTop 24, paddingBottom 24, space-between
-//   → header pinned top, illustration + buttons pinned bottom (mirrors login-sheets)
-//   → selection buttons gap 16; OR row gap 8; SSO row centered, gap 16, buttons 48x48
+// Access-code + Petverse steps share layout + type scale, both top-aligned:
+//   → scrollContent paddingH 24, paddingTop 24, paddingBottom 24, gap 32
+//   → header gap 8; title 28/32 semiBold #1B3380 + subtitle 18/26 regular #9B9B9B
+//   → field (label 14/16 #545E6B + input h48 radius6 border #9B9B9B paddingH 8, text 16/20 centered)
+//   → primary button h48-ish radius8 bg #1B87E6 text 16 white (paddingVertical 14)
+// Petverse extras: petverseActions gap 16, or divider gap 16 (or 14/16 #9B9B9B),
+//   social row gap 16, buttons flex1 h40 radius8 border rgba(27,51,128,0.3)
+// Selection step (legacy selectionContent): kept for reference; Petverse replaces its UI
+//   → selection buttons gap 16; OR row gap 8; SSO row centered, gap 16, buttons 48x48 (legacy)
 // Container (scrollContent): paddingH 24, paddingTop 24, paddingBottom 24, gap 32
 //   → header ↔ form ↔ login button are each separated by 32
 // Form: gap 16 between fields; password → forgot is pulled up to 8 (forgotPress marginTop -8)
@@ -625,16 +825,100 @@ const styles = StyleSheet.create({
     gap: Spacing.two,
   },
   title: {
-    fontSize: 24,
-    lineHeight: 32,
+    fontSize: 32,
+    lineHeight: 40,
     textAlign: 'left',
     alignSelf: 'stretch',
   },
   subtitle: {
     textAlign: 'left',
-    fontSize: 16,
-    lineHeight: 22,
+    fontSize: 20,
+    lineHeight: 24,
     fontFamily: Fonts.regular,
+  },
+  accessTitle: {
+    fontSize: 28,
+    lineHeight: 32,
+    fontFamily: Fonts.semiBold,
+    textAlign: 'left',
+    alignSelf: 'stretch',
+  },
+  accessSubtitle: {
+    textAlign: 'left',
+    alignSelf: 'stretch',
+    fontSize: 18,
+    lineHeight: 26,
+    fontFamily: Fonts.regular,
+    color: '#9B9B9B',
+  },
+  accessForm: {
+    gap: Spacing.three,
+  },
+  accessIllustrationWrap: {
+    flex: 1,
+    alignSelf: 'stretch',
+    alignItems: 'flex-end',
+    justifyContent: 'flex-end',
+  },
+  petverseTitle: {
+    fontSize: 28,
+    lineHeight: 32,
+    fontFamily: Fonts.semiBold,
+    textAlign: 'left',
+    alignSelf: 'stretch',
+  },
+  petverseSubtitle: {
+    textAlign: 'left',
+    alignSelf: 'stretch',
+    fontSize: 18,
+    lineHeight: 26,
+    fontFamily: Fonts.regular,
+    color: '#9B9B9B',
+  },
+  petverseForm: {
+    gap: Spacing.three,
+  },
+  petverseActions: {
+    alignSelf: 'stretch',
+    gap: Spacing.three,
+  },
+  orLowerText: {
+    fontSize: 14,
+    lineHeight: 16,
+    fontFamily: Fonts.regular,
+    color: '#9B9B9B',
+  },
+  socialRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.three,
+    alignSelf: 'stretch',
+  },
+  socialButton: {
+    flex: 1,
+    height: 40,
+    borderRadius: 8,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: 'rgba(27, 51, 128, 0.3)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: Spacing.four,
+    paddingVertical: 10,
+  },
+  accessInput: {
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#9B9B9B',
+    backgroundColor: '#FFFFFF',
+    height: 48,
+    paddingHorizontal: Spacing.two,
+    paddingVertical: 0,
+    fontSize: 16,
+    lineHeight: 20,
+    fontFamily: Fonts.regular,
+    textAlignVertical: 'center',
   },
   form: {
     gap: Spacing.three,
@@ -643,8 +927,8 @@ const styles = StyleSheet.create({
     gap: Spacing.one,
   },
   label: {
-    fontSize: 13,
-    lineHeight: 18,
+    fontSize: 14,
+    lineHeight: 16,
     fontFamily: Fonts.regular,
     color: '#545E6B',
   },
@@ -736,7 +1020,7 @@ const styles = StyleSheet.create({
   orRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.two,
+    gap: Spacing.three,
   },
   orLine: {
     flex: 1,

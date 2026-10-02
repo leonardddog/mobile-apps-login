@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { AccessibilityInfo, StyleSheet, useColorScheme } from 'react-native';
+import { AccessibilityInfo, StyleSheet } from 'react-native';
 import Animated, {
   Easing,
   cancelAnimation,
@@ -25,10 +25,8 @@ import {
 // zero runtime cost (no views, no animations) until one is wired up.
 export type LoginBgVariant = 'dots' | 'grid' | 'wash';
 
-// Static, code-drawn backgrounds. Light-mode palette only.
+// Static, code-drawn backgrounds. Light-only palette.
 export function LoginBackground({ variant }: { variant: LoginBgVariant }) {
-  const scheme = useColorScheme();
-  if (scheme === 'dark') return null;
   if (variant === 'dots') return <DotsBackground />;
   if (variant === 'grid') return <GridBackground />;
   return <WashBackground />;

@@ -5,10 +5,10 @@ import { useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
 import { LoginBackground } from '@/components/login-background';
 import { LoginIllustration } from '@/components/login-illustration';
+import { ThemedText } from '@/components/themed-text';
+import { ThemedView } from '@/components/themed-view';
 import { Fonts, MaxContentWidth, Spacing } from '@/constants/theme';
 import { useSession } from '@/ctx';
 
@@ -104,7 +104,7 @@ export default function LoginSheetsScreen() {
           <ThemedText type="small" style={{ fontFamily: Fonts.regular, color: '#9B9B9B' }}>
             Powered by{' '}
           </ThemedText>
-          <Pressable onPress={() => {}}>
+          <Pressable onPress={() => { }}>
             <ThemedText type="small" style={styles.poweredByLink}>
               QuestionPro
             </ThemedText>
