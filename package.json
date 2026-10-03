@@ -5,6 +5,7 @@
   "dependencies": {
     "@expo-google-fonts/fira-sans": "^0.4.1",
     "@expo/ui": "~57.0.14",
+    "@react-native-picker/picker": "2.11.4",
     "expo": "~57.0.18",
     "expo-blur": "~57.0.3",
     "expo-constants": "~57.0.16",

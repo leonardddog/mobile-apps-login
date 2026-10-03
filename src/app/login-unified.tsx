@@ -4,6 +4,7 @@ import {
   ActivityIndicator,
   Keyboard,
   KeyboardAvoidingView,
+  Modal,
   Platform,
   Pressable,
   ScrollView,
@@ -12,6 +13,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Picker } from '@react-native-picker/picker';
 import { Path, Svg } from 'react-native-svg';
 import Animated, { Easing, FadeIn, SlideInRight } from 'react-native-reanimated';
 
@@ -29,6 +31,13 @@ import { useSession } from '@/ctx';
 const COMMUNITY_NAMES: Record<string, string> = {
   A123Z: 'Petverse',
 };
+
+// Birth-year options, newest first.
+const CURRENT_YEAR = new Date().getFullYear();
+const YEAR_OPTIONS: number[] = Array.from(
+  { length: CURRENT_YEAR - 1900 + 1 },
+  (_, i) => CURRENT_YEAR - i,
+);
 
 // Inlined from Figma check 110:3325 (16x16, #42BD84).
 function CheckIcon() {
@@ -92,6 +101,7 @@ export default function LoginUnifiedScreen() {
     | 'signup-verify'
     | 'signup-password'
     | 'signup-profile'
+    | 'signup-details'
   >('access-code');
   // Slide = forward/deeper (access code → community), fade = lateral (login ↔ signup).
   const [enterAnim, setEnterAnim] = useState<'slide' | 'fade'>('slide');
@@ -415,6 +425,8 @@ export default function LoginUnifiedScreen() {
     firstNameRef.current?.blur();
     lastNameRef.current?.blur();
     usernameRef.current?.blur();
+    setBirthYearOpen(false);
+    zipCodeRef.current?.blur();
     Keyboard.dismiss();
     setEnterAnim('fade');
     setStep('credentials');
@@ -525,9 +537,102 @@ export default function LoginUnifiedScreen() {
 
     setProfileSubmitting(true);
     // Simulate async profile save; replace with real API call.
-    // Signup step 4 lands with its Figma design.
     await new Promise((r) => setTimeout(r, 500));
     setProfileSubmitting(false);
+    firstNameRef.current?.blur();
+    lastNameRef.current?.blur();
+    usernameRef.current?.blur();
+    Keyboard.dismiss();
+    setBirthYear('');
+    setZipCode('');
+    setBirthYearError(null);
+    setZipCodeError(null);
+    setEnterAnim('fade');
+    setStep('signup-details');
+  };
+
+  const goBackToSignupProfile = () => {
+    setBirthYearOpen(false);
+    zipCodeRef.current?.blur();
+    Keyboard.dismiss();
+    setEnterAnim('fade');
+    setStep('signup-profile');
+  };
+
+  const zipCodeRef = useRef<TextInput>(null);
+
+  const [birthYear, setBirthYear] = useState('');
+  const [zipCode, setZipCode] = useState('');
+  const [birthYearOpen, setBirthYearOpen] = useState(false);
+  const [pendingYear, setPendingYear] = useState<string | null>(null);
+  const [zipCodeFocused, setZipCodeFocused] = useState(false);
+  const [birthYearError, setBirthYearError] = useState<string | null>(null);
+  const [zipCodeError, setZipCodeError] = useState<string | null>(null);
+  const [detailsSubmitting, setDetailsSubmitting] = useState(false);
+  const [detailsSkipping, setDetailsSkipping] = useState(false);
+
+  const canSubmitDetails = birthYear.trim().length > 0 && zipCode.trim().length > 0;
+
+  const openYearPicker = () => {
+    zipCodeRef.current?.blur();
+    Keyboard.dismiss();
+    setPendingYear(birthYear || String(CURRENT_YEAR));
+    setBirthYearOpen(true);
+  };
+
+  const confirmYearPicker = () => {
+    if (pendingYear) {
+      setBirthYear(pendingYear);
+      if (birthYearError) setBirthYearError(null);
+    }
+    setBirthYearOpen(false);
+  };
+
+  const cancelYearPicker = () => {
+    setPendingYear(null);
+    setBirthYearOpen(false);
+  };
+
+  const onSubmitDetails = async () => {
+    setBirthYearError(null);
+    setZipCodeError(null);
+    const year = birthYear.trim();
+    const zip = zipCode.trim();
+    const currentYear = new Date().getFullYear();
+
+    let valid = true;
+    if (!year) {
+      setBirthYearError('Birth year is required.');
+      valid = false;
+    } else if (!/^\d{4}$/.test(year) || Number(year) < 1900 || Number(year) > currentYear) {
+      setBirthYearError(`Enter a year between 1900 and ${currentYear}.`);
+      valid = false;
+    }
+    if (!zip) {
+      setZipCodeError('ZIP code is required.');
+      valid = false;
+    } else if (!/^\d{5}(-\d{4})?$/.test(zip)) {
+      setZipCodeError('Enter a valid ZIP code.');
+      valid = false;
+    }
+    if (!valid) return;
+
+    setDetailsSubmitting(true);
+    // Simulate async save; replace with real API call.
+    // Signup step 5 lands with its Figma design.
+    await new Promise((r) => setTimeout(r, 500));
+    setDetailsSubmitting(false);
+  };
+
+  const onSkipDetails = async () => {
+    setBirthYearOpen(false);
+    zipCodeRef.current?.blur();
+    Keyboard.dismiss();
+    setDetailsSkipping(true);
+    // Simulate async skip; replace with real API call.
+    // Signup step 5 lands with its Figma design.
+    await new Promise((r) => setTimeout(r, 500));
+    setDetailsSkipping(false);
   };
 
   const onChangeSignupCodeAt = (index: number, text: string) => {
@@ -1538,7 +1643,7 @@ export default function LoginUnifiedScreen() {
                   </Pressable>
                 </View>
                 </>
-              ) : (
+              ) : step === 'signup-profile' ? (
                 <>
                 <View style={styles.forgotHeader}>
                   <View style={styles.topBarRow}>
@@ -1705,6 +1810,174 @@ export default function LoginUnifiedScreen() {
                   </Pressable>
                 </View>
                 </>
+              ) : (
+                <>
+                <View style={styles.forgotHeader}>
+                  <View style={styles.topBarRow}>
+                    <Pressable
+                      onPress={goBackToSignupProfile}
+                      accessibilityLabel="Back to profile"
+                      style={({ pressed }) => [styles.iconButton, { opacity: pressed ? 0.7 : 1 }]}>
+                      <ThemedText style={styles.backChevron}>‹</ThemedText>
+                    </Pressable>
+                    <Pressable
+                      onPress={goCloseSignup}
+                      accessibilityLabel="Close sign up"
+                      style={({ pressed }) => [styles.iconButton, { opacity: pressed ? 0.7 : 1 }]}>
+                      <CloseIcon />
+                    </Pressable>
+                  </View>
+                  <View style={styles.signupVerifyHeader}>
+                    <SignupStepper done={4} />
+                    <View style={styles.header}>
+                      <ThemedText style={styles.title}>Let&rsquo;s get to know you</ThemedText>
+                      <View style={styles.signupRow}>
+                        <ThemedText style={styles.subtitle}>
+                          Add your birth year and ZIP code.{' '}
+                        </ThemedText>
+                        <Pressable onPress={() => {}} accessibilityLabel="Why we ask">
+                          <ThemedText style={[styles.subtitle, styles.linkText]}>Why?</ThemedText>
+                        </Pressable>
+                      </View>
+                    </View>
+                  </View>
+                </View>
+
+                <View style={styles.credentialsBody}>
+                  <View style={styles.credentialsFields}>
+                    <Pressable onPress={openYearPicker} style={styles.field}>
+                      <ThemedText type="smallBold" style={styles.label}>
+                        Birth year
+                      </ThemedText>
+                      <View
+                        style={[
+                          styles.input,
+                          styles.selectBox,
+                          {
+                            backgroundColor: birthYearError ? '#F5F5F5' : '#FFFFFF',
+                            borderColor: birthYearError
+                              ? '#A50000'
+                              : birthYearOpen
+                                ? '#1B87E6'
+                                : '#9B9B9B',
+                          },
+                        ]}
+                        accessibilityLabel="Birth year, select"
+                        accessibilityRole="button">
+                        <ThemedText
+                          style={[
+                            styles.selectValue,
+                            { color: birthYear ? '#545E6B' : '#9B9B9B' },
+                          ]}>
+                          {birthYear || 'Enter your birth year'}
+                        </ThemedText>
+                        <ThemedText style={styles.selectChevron}>›</ThemedText>
+                      </View>
+                      {birthYearError && (
+                        <ThemedText style={styles.inlineError}>{birthYearError}</ThemedText>
+                      )}
+                    </Pressable>
+
+                    <Modal
+                      visible={birthYearOpen}
+                      transparent
+                      animationType="slide"
+                      onRequestClose={cancelYearPicker}>
+                      <Pressable style={styles.sheetScrim} onPress={cancelYearPicker} />
+                      <View style={styles.sheet}>
+                        <View style={styles.sheetToolbar}>
+                          <Pressable onPress={cancelYearPicker} hitSlop={8}>
+                            <ThemedText style={styles.sheetCancel}>Cancel</ThemedText>
+                          </Pressable>
+                          <Pressable onPress={confirmYearPicker} hitSlop={8}>
+                            <ThemedText style={styles.sheetDone}>Done</ThemedText>
+                          </Pressable>
+                        </View>
+                        <Picker
+                          selectedValue={pendingYear ?? String(CURRENT_YEAR)}
+                          onValueChange={(value) => setPendingYear(String(value))}>
+                          {YEAR_OPTIONS.map((year) => (
+                            <Picker.Item key={year} label={String(year)} value={String(year)} />
+                          ))}
+                        </Picker>
+                      </View>
+                    </Modal>
+
+                    <Pressable onPress={() => zipCodeRef.current?.focus()} style={styles.field}>
+                      <ThemedText type="smallBold" style={styles.label}>
+                        ZIP code
+                      </ThemedText>
+                      <TextInput
+                        ref={zipCodeRef}
+                        value={zipCode}
+                        onChangeText={(v) => {
+                          setZipCode(v);
+                          if (zipCodeError) setZipCodeError(null);
+                        }}
+                        placeholder="Enter your ZIP code"
+                        placeholderTextColor="#9B9B9B"
+                        keyboardType="numbers-and-punctuation"
+                        maxLength={10}
+                        autoCapitalize="none"
+                        autoCorrect={false}
+                        autoComplete="postal-code"
+                        textContentType="postalCode"
+                        returnKeyType="done"
+                        onSubmitEditing={onSubmitDetails}
+                        onFocus={() => setZipCodeFocused(true)}
+                        onBlur={() => setZipCodeFocused(false)}
+                        style={[
+                          styles.input,
+                          {
+                            backgroundColor:
+                              zipCodeError ? '#F5F5F5' : zipCodeFocused ? '#F5F5F5' : '#FFFFFF',
+                            borderColor:
+                              zipCodeError ? '#A50000' : zipCodeFocused ? '#1B87E6' : '#9B9B9B',
+                          },
+                        ]}
+                      />
+                      {zipCodeError && (
+                        <ThemedText style={styles.inlineError}>{zipCodeError}</ThemedText>
+                      )}
+                    </Pressable>
+                  </View>
+
+                  <Pressable
+                    onPress={onSubmitDetails}
+                    disabled={!canSubmitDetails || detailsSubmitting || detailsSkipping}
+                    accessibilityLabel="Continue"
+                    style={({ pressed }) => [
+                      styles.primaryButton,
+                      {
+                        backgroundColor: canSubmitDetails ? '#1B87E6' : '#F0F0F0',
+                        opacity: detailsSubmitting ? 0.7 : pressed ? 0.9 : 1,
+                      },
+                    ]}>
+                    {detailsSubmitting ? (
+                      <ActivityIndicator color="#fff" />
+                    ) : (
+                      <ThemedText
+                        type="smallBold"
+                        style={[
+                          styles.primaryButtonText,
+                          { color: canSubmitDetails ? '#fff' : '#9B9B9B' },
+                        ]}>
+                        Continue
+                      </ThemedText>
+                    )}
+                  </Pressable>
+
+                  <Pressable
+                    onPress={onSkipDetails}
+                    disabled={detailsSubmitting || detailsSkipping}
+                    accessibilityLabel="Skip"
+                    style={styles.resendPress}>
+                    <ThemedText style={styles.resendLink}>
+                      {detailsSkipping ? 'Skipping…' : 'Skip'}
+                    </ThemedText>
+                  </Pressable>
+                </View>
+                </>
               )}
             </Animated.View>
           </ScrollView>
@@ -1727,7 +2000,7 @@ export default function LoginUnifiedScreen() {
 // Figma 105:1851 (access code) + 119:2174 (credentials) + 119:2016 (signup)
 // + 133:2298 (forgot) + 133:2389 (forgot verify) + 133:2472 (reset)
 // + 128:2315 (signup verify) + 132:3022 (signup password)
-// + 133:1796 (signup profile) spacing
+// + 133:1796 (signup profile) + 133:1920 (signup details) spacing
 // (Spacing: one 4, two 8, three 16, four 24, five 32, six 64):
 // Safe Area: paddingH 24, paddingTop 24, paddingBottom 8
 // Main col: gap 64 (header ↔ body); body gap 32 (fields ↔ button ↔ divider ↔ SSO)
@@ -2016,6 +2289,55 @@ const styles = StyleSheet.create({
     lineHeight: 16,
     fontFamily: Fonts.regular,
     color: '#A50000',
+  },
+  selectBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  selectValue: {
+    flex: 1,
+    fontSize: 14,
+    lineHeight: 16,
+    fontFamily: Fonts.regular,
+  },
+  selectChevron: {
+    fontSize: 18,
+    lineHeight: 20,
+    fontFamily: Fonts.regular,
+    color: '#9B9B9B',
+    transform: [{ rotate: '90deg' }],
+  },
+  sheetScrim: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+  },
+  sheet: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    paddingBottom: Spacing.six,
+  },
+  sheetToolbar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: Spacing.three,
+    paddingVertical: Spacing.two,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
+  },
+  sheetCancel: {
+    fontSize: 16,
+    lineHeight: 24,
+    fontFamily: Fonts.regular,
+    color: '#9B9B9B',
+  },
+  sheetDone: {
+    fontSize: 16,
+    lineHeight: 24,
+    fontFamily: Fonts.semiBold,
+    color: '#1B87E6',
   },
   primaryButton: {
     minHeight: 40,
