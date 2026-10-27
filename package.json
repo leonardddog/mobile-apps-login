@@ -2,9 +2,14 @@
   "name": "mobile-apps-login",
   "main": "expo-router/entry",
   "version": "1.0.0",
-  "packageManager": "pnpm@11.5.1",
+  "packageManager": "pnpm@10.22.0",
   "engines": {
-    "node": ">=20.19.4"
+    "node": ">=22.0.0"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "unrs-resolver"
+    ]
   },
   "dependencies": {
     "@expo-google-fonts/fira-sans": "^0.4.1",
