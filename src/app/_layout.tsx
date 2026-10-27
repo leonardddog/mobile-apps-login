@@ -66,9 +66,6 @@ function RootNavigator() {
       </Stack.Protected>
 
       <Stack.Protected guard={!session}>
-        <Stack.Screen name="login-menu" />
-        <Stack.Screen name="sign-in" options={{ gestureEnabled: true }} />
-        <Stack.Screen name="login-sheets" options={{ gestureEnabled: true }} />
         <Stack.Screen name="login-unified" options={{ gestureEnabled: true }} />
       </Stack.Protected>
     </Stack>

@@ -23,8 +23,17 @@
       "package": "com.anonymous.mobileappslogin"
     },
     "web": {
-      "output": "static",
-      "favicon": "./assets/images/favicon.png"
+      "output": "single",
+      "bundler": "metro",
+      "favicon": "./assets/images/favicon.png",
+      "name": "Communities",
+      "shortName": "Communities",
+      "lang": "en",
+      "themeColor": "#F8FBFF",
+      "backgroundColor": "#F8FBFF",
+      "display": "standalone",
+      "orientation": "portrait",
+      "startUrl": "/"
     },
     "plugins": [
       "expo-router",

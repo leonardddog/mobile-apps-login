@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover"
+    />
+    <meta name="description" content="Sign in to your Communities workspace." />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Communities" />
+    <title>Communities</title>
+
+    <link rel="icon" href="/favicon.ico" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/manifest.json" />
+
+    <style id="expo-reset">
+      html,
+      body {
+        height: 100%;
+        background-color: #f8fbff;
+      }
+
+      body {
+        overflow: hidden;
+        -webkit-tap-highlight-color: transparent;
+      }
+
+      #root {
+        display: flex;
+        height: 100%;
+        flex: 1;
+      }
+    </style>
+
+    <script>
+      (function () {
+        try {
+          var params = new URLSearchParams(window.location.search);
+          var standalone =
+            window.matchMedia('(display-mode: standalone)').matches ||
+            window.navigator.standalone === true;
+          var desktop =
+            window.matchMedia('(hover: hover) and (pointer: fine)').matches &&
+            window.innerWidth >= 900;
+
+          if (
+            !standalone &&
+            !params.has('frame') &&
+            desktop &&
+            window.location.pathname === '/'
+          ) {
+            window.location.replace('/preview');
+          }
+        } catch (error) {
+          // The app itself will still load if this check is unavailable.
+        }
+      })();
+    </script>
+  </head>
+
+  <body>
+    <noscript>You need to enable JavaScript to run this app.</noscript>
+    <div id="root"></div>
+
+    <script>
+      if ('serviceWorker' in navigator && window.location.protocol === 'https:') {
+        window.addEventListener('load', function () {
+          navigator.serviceWorker.register('/sw.js').catch(function () {
+            // The app works without offline support.
+          });
+        });
+      }
+    </script>
+  </body>
+</html>

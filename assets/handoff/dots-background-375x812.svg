@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="375" height="812" viewBox="0 0 375 812" fill="none">
+  <defs>
+    <pattern id="bgDots" width="22" height="36" patternUnits="userSpaceOnUse">
+      <circle cx="5" cy="9" r="1.7" fill="#1B87E6" fill-opacity="0.16"/>
+      <circle cx="16" cy="27" r="1.7" fill="#1B87E6" fill-opacity="0.16"/>
+    </pattern>
+    <radialGradient id="bgDotsFade" cx="50%" cy="40%" r="75%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0"/>
+      <stop offset="45%" stop-color="#ffffff" stop-opacity="0.55"/>
+      <stop offset="75%" stop-color="#ffffff" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0.3"/>
+    </radialGradient>
+    <mask id="bgDotsMask">
+      <rect x="0" y="0" width="375" height="812" fill="url(#bgDotsFade)"/>
+    </mask>
+  </defs>
+  <rect x="0" y="0" width="375" height="812" fill="url(#bgDots)" mask="url(#bgDotsMask)"/>
+</svg>

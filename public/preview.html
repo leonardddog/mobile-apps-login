@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#0b0f18" />
+    <title>Communities · Phone Preview</title>
+    <style>
+      :root {
+        --phone-width: 375;
+        --phone-height: 812;
+        --bezel: 12;
+        --scale: 1;
+        --ink: #0b0b0c;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+      }
+
+      body {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        background:
+          radial-gradient(circle at 50% 30%, rgba(27, 135, 230, 0.22), transparent 42%),
+          radial-gradient(circle at 50% 70%, rgba(27, 51, 128, 0.2), transparent 50%),
+          #080b12;
+        color: #dbe6f5;
+        font-family:
+          -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      }
+
+      .stage {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 18px;
+        transform: scale(var(--scale));
+        transform-origin: center;
+      }
+
+      .phone {
+        position: relative;
+        width: calc((var(--phone-width) + var(--bezel) * 2) * 1px);
+        height: calc((var(--phone-height) + var(--bezel) * 2) * 1px);
+        padding: calc(var(--bezel) * 1px);
+        border-radius: 56px;
+        background: linear-gradient(145deg, #3a3b40 0%, #0a0a0b 18%, #26272b 58%, #101114 100%);
+        box-shadow:
+          0 2px 2px rgba(255, 255, 255, 0.16) inset,
+          0 -2px 3px rgba(255, 255, 255, 0.08) inset,
+          0 36px 80px rgba(0, 0, 0, 0.62),
+          0 12px 28px rgba(0, 0, 0, 0.45);
+      }
+
+      .phone::before,
+      .phone::after {
+        content: '';
+        position: absolute;
+        width: 4px;
+        border-radius: 4px;
+        background: linear-gradient(180deg, #2b2c30, #0c0c0d);
+      }
+
+      .phone::before {
+        left: -4px;
+        top: 188px;
+        height: 62px;
+        box-shadow: 0 82px 0 #141518;
+      }
+
+      .phone::after {
+        right: -4px;
+        top: 236px;
+        height: 96px;
+      }
+
+      .screen {
+        position: relative;
+        display: grid;
+        grid-template-rows: 47px minmax(0, 1fr) 34px;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        border-radius: 45px;
+        background: #f8fbff;
+        isolation: isolate;
+      }
+
+      .notch {
+        position: absolute;
+        top: 0;
+        left: 50%;
+        z-index: 3;
+        width: 156px;
+        height: 30px;
+        border-radius: 0 0 19px 19px;
+        background: #000;
+        transform: translateX(-50%);
+      }
+
+      .statusbar {
+        position: relative;
+        z-index: 2;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 4px 24px 0;
+        color: #05070a;
+        font-size: 15px;
+        font-weight: 600;
+        letter-spacing: -0.01em;
+        background: #f8fbff;
+      }
+
+      .status-icons {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .status-icons svg {
+        display: block;
+      }
+
+      iframe {
+        display: block;
+        width: 100%;
+        height: 100%;
+        border: 0;
+        background: #f8fbff;
+      }
+
+      .home-indicator {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #f8fbff;
+      }
+
+      .home-indicator span {
+        width: 134px;
+        height: 5px;
+        border-radius: 999px;
+        background: #05070a;
+        opacity: 0.82;
+      }
+
+      .caption {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 12px;
+        font-weight: 500;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: rgba(219, 230, 245, 0.58);
+      }
+
+      .caption a {
+        color: rgba(125, 190, 255, 0.9);
+        text-decoration: none;
+      }
+
+      .caption a:hover {
+        color: #b9ddff;
+        text-decoration: underline;
+      }
+
+      .caption .dot {
+        width: 3px;
+        height: 3px;
+        border-radius: 50%;
+        background: currentColor;
+        opacity: 0.6;
+      }
+
+      @media (max-width: 600px) {
+        body {
+          background: #f8fbff;
+        }
+
+        .stage {
+          display: none;
+        }
+      }
+    </style>
+    <script>
+      (function () {
+        if (window.innerWidth < 600) {
+          window.location.replace('/?frame=1');
+        }
+      })();
+    </script>
+  </head>
+
+  <body>
+    <div class="stage">
+      <div class="phone">
+        <div class="screen">
+          <div class="notch" aria-hidden="true"></div>
+
+          <div class="statusbar" aria-hidden="true">
+            <span>9:41</span>
+            <span class="status-icons">
+              <svg width="17" height="11" viewBox="0 0 17 11" fill="none">
+                <rect x="0" y="7" width="3" height="4" rx="1" fill="#05070A" />
+                <rect x="4.5" y="5" width="3" height="6" rx="1" fill="#05070A" />
+                <rect x="9" y="2.5" width="3" height="8.5" rx="1" fill="#05070A" />
+                <rect x="13.5" y="0" width="3" height="11" rx="1" fill="#05070A" />
+              </svg>
+              <svg width="16" height="12" viewBox="0 0 16 12" fill="none">
+                <path
+                  d="M8 11.2L10.2 8.7C9.6 8.2 8.8 7.9 8 7.9C7.2 7.9 6.4 8.2 5.8 8.7L8 11.2Z"
+                  fill="#05070A"
+                />
+                <path
+                  d="M8 4.9C9.6 4.9 11.1 5.5 12.2 6.5L14.1 4.3C12.5 2.9 10.3 2 8 2C5.7 2 3.5 2.9 1.9 4.3L3.8 6.5C4.9 5.5 6.4 4.9 8 4.9Z"
+                  fill="#05070A"
+                  opacity="0.92"
+                />
+                <path
+                  d="M8 0C4.9 0 2.1 1.2 0 3.2L1.9 5.4C3.5 3.9 5.7 3 8 3C10.3 3 12.5 3.9 14.1 5.4L16 3.2C13.9 1.2 11.1 0 8 0Z"
+                  fill="#05070A"
+                  opacity="0.78"
+                />
+              </svg>
+              <svg width="25" height="12" viewBox="0 0 25 12" fill="none">
+                <rect
+                  x="0.6"
+                  y="0.6"
+                  width="21"
+                  height="10.8"
+                  rx="3.2"
+                  stroke="#05070A"
+                  stroke-opacity="0.4"
+                  stroke-width="1.2"
+                />
+                <rect x="2.2" y="2.2" width="17.8" height="7.6" rx="2" fill="#05070A" />
+                <path
+                  d="M23.2 4.2V7.8C24.1 7.5 24.5 6.9 24.5 6C24.5 5.1 24.1 4.5 23.2 4.2Z"
+                  fill="#05070A"
+                  fill-opacity="0.45"
+                />
+              </svg>
+            </span>
+          </div>
+
+          <iframe src="/?frame=1" title="Communities app in a phone frame"></iframe>
+
+          <div class="home-indicator" aria-hidden="true">
+            <span></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="caption">
+        <span>Communities</span>
+        <span class="dot"></span>
+        <a href="/?frame=1" target="_blank" rel="noreferrer">Open full screen</a>
+      </div>
+    </div>
+
+    <script>
+      (function () {
+        function fit() {
+          var bezel = 12;
+          var width = 375 + bezel * 2;
+          var height = 812 + bezel * 2;
+          var scale = Math.min(
+            1,
+            (window.innerWidth - 32) / width,
+            (window.innerHeight - 32 - 44) / height
+          );
+
+          document.documentElement.style.setProperty('--scale', Math.max(0.45, scale));
+        }
+
+        fit();
+        window.addEventListener('resize', fit);
+      })();
+    </script>
+  </body>
+</html>
